@@ -1,0 +1,2 @@
+streamlit==1.39.0
+biopython==1.84
