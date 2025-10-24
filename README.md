@@ -32,5 +32,5 @@ The app is built with **Streamlit** and provides an intuitive interface for sear
 
 ### 1️⃣ Clone or Download the Repository
 ```bash
-git clone https://github.com/<HM-Anas>/dna-pattern-matching.git
+git clone https://github.com/HM-Anas/dna-pattern-matching.git
 cd dna-pattern-matching
