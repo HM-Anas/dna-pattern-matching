@@ -1,5 +1,8 @@
 import streamlit as st
+import re
 import time
+import pandas as pd
+from io import StringIO
 
 # ============================
 # ✅ PAGE CONFIG
@@ -38,15 +41,20 @@ st.markdown("""
             border-radius: 10px;
             border: 1px solid #00B4D8;
         }
+        .fasta-summary {
+            background-color: #1E2636;
+            border: 1px solid #00B4D8;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 10px;
+        }
     </style>
 """, unsafe_allow_html=True)
 
 # ============================
 # 🧬 HEADER
 # ============================
-st.markdown("""
-    <h1 style="text-align:center;">🧬 DNA Pattern Matching Tool (FASTA + KMP + Boyer–Moore)</h1>
-""", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center;'>🧬 DNA Pattern Matching Tool (FASTA + KMP + Boyer–Moore)</h1>", unsafe_allow_html=True)
 st.markdown("<br>", unsafe_allow_html=True)
 
 # ============================
@@ -54,12 +62,46 @@ st.markdown("<br>", unsafe_allow_html=True)
 # ============================
 uploaded_file = st.file_uploader("📁 Upload a FASTA file", type=["fasta", "fa", "txt"])
 
-dna_sequence = ""
+fasta_dict = {}
 if uploaded_file is not None:
-    fasta_content = uploaded_file.read().decode("utf-8")
-    # Remove headers starting with '>'
-    dna_sequence = "".join(line.strip() for line in fasta_content.splitlines() if not line.startswith(">"))
-    st.success(f"✅ File loaded successfully! Sequence length: {len(dna_sequence):,} bases")
+    fasta_content = uploaded_file.getvalue().decode("utf-8", errors="ignore")
+
+    # Split multiple FASTA entries
+    entries = fasta_content.strip().split(">")
+    for entry in entries:
+        if not entry.strip():
+            continue
+        lines = entry.strip().split("\n")
+        header = lines[0].strip()
+        seq = "".join(lines[1:]).upper()
+        seq = re.sub(r'[^ATCGN]', '', seq)
+        fasta_dict[header] = seq
+
+    st.success(f"✅ Loaded {len(fasta_dict)} FASTA sequence(s) successfully!")
+
+    # ============================
+    # 📊 FASTA SUMMARY TABLE
+    # ============================
+    summary_data = []
+    for header, seq in fasta_dict.items():
+        gc_content = (seq.count("G") + seq.count("C")) / len(seq) * 100 if len(seq) > 0 else 0
+        n_count = seq.count("N")
+        summary_data.append({
+            "Header": header[:80] + ("..." if len(header) > 80 else ""),
+            "Length (bp)": len(seq),
+            "GC%": round(gc_content, 2),
+            "N (Ambiguous)": n_count
+        })
+
+    df_summary = pd.DataFrame(summary_data)
+    st.markdown("<h4>📊 FASTA Summary</h4>", unsafe_allow_html=True)
+    st.dataframe(df_summary, use_container_width=True)
+
+    # Allow user to select which sequence to analyze
+    selected_header = st.selectbox("🔹 Select a sequence to analyze", list(fasta_dict.keys()))
+    dna_sequence = fasta_dict[selected_header]
+else:
+    dna_sequence = ""
 
 # ============================
 # 🧬 INPUTS
@@ -72,13 +114,13 @@ with col1:
             "Enter DNA Sequence (if no file uploaded):",
             placeholder="Example: ATCGGATCGATCGTACGATCGA...",
             height=150
-        )
+        ).strip().upper()
 
 with col2:
     pattern = st.text_input(
         "Enter Pattern to Search:",
         placeholder="Example: CGATCGA"
-    )
+    ).strip().upper()
 
 algorithm = st.radio(
     "Select Algorithm:",
@@ -132,32 +174,54 @@ def boyer_moore_search(text, pattern):
 # 🚀 RUN SEARCH
 # ============================
 if st.button("🔍 Find Pattern"):
-    if not dna_sequence.strip() or not pattern.strip():
-        st.warning("⚠️ Please provide a DNA sequence and a pattern.")
+    if not dna_sequence or not pattern:
+        st.warning("⚠️ Please provide both DNA sequence and pattern.")
+    elif len(pattern) > len(dna_sequence):
+        st.error("❌ Pattern cannot be longer than the sequence.")
     else:
         with st.spinner("Running pattern matching..."):
-            time.sleep(0.5)
+            progress = st.progress(0)
+            time.sleep(0.2)
+
             if algorithm == "KMP (Knuth–Morris–Pratt)":
                 positions = kmp_search(dna_sequence, pattern)
             else:
                 positions = boyer_moore_search(dna_sequence, pattern)
 
+            progress.progress(100)
+            time.sleep(0.3)
+
+        # ============================
+        # 📊 RESULTS
+        # ============================
         if positions:
             total_matches = len(positions)
             percentage = (total_matches * len(pattern) / len(dna_sequence)) * 100
+            gc_content = (dna_sequence.count('G') + dna_sequence.count('C')) / len(dna_sequence) * 100
+
+            max_display = 50
+            display_positions = positions[:max_display]
+            if len(positions) > max_display:
+                display_positions.append("... (more)")
 
             st.markdown(f"""
             <div class='result-box'>
                 <h4>✅ Pattern Found!</h4>
+                <b>Sequence:</b> {selected_header if uploaded_file else "User Input"}<br>
                 <b>Matches:</b> {total_matches}<br>
                 <b>Sequence Length:</b> {len(dna_sequence):,} bases<br>
                 <b>Pattern Length:</b> {len(pattern)} bases<br>
                 <b>Match Coverage:</b> {percentage:.3f}% of total bases<br>
-                <b>Positions:</b> {positions}
+                <b>GC Content:</b> {gc_content:.2f}%<br>
+                <b>Positions:</b> {display_positions}
             </div>
             """, unsafe_allow_html=True)
+
+            df = pd.DataFrame({'Match_Position': positions})
+            csv = df.to_csv(index=False)
+            st.download_button("📥 Download Match Positions (CSV)", csv, "match_positions.csv", "text/csv")
         else:
-            st.error("❌ Pattern not found in the DNA sequence.")
+            st.error("❌ Pattern not found in the selected sequence.")
 
 # ============================
 # ℹ️ FOOTER
@@ -165,6 +229,6 @@ if st.button("🔍 Find Pattern"):
 st.markdown("""
 ---
 <p style='text-align:center; color:gray; font-size:0.9em;'>
-Developed by <b>Anas Jamshed</b> 🧠 | Powered by Streamlit
+Developed by <b>Anas Jamshed</b> 🧠 | Advanced FASTA Pattern Matching Tool | Powered by Streamlit
 </p>
 """, unsafe_allow_html=True)
