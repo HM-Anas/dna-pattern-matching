@@ -1,234 +1,175 @@
 import streamlit as st
-import re
-import time
+import re, time
 import pandas as pd
-from io import StringIO
+import matplotlib.pyplot as plt
 
 # ============================
-# ✅ PAGE CONFIG
+# PAGE CONFIG
 # ============================
-st.set_page_config(
-    page_title="DNA Pattern Matching Tool",
-    page_icon="🧬",
-    layout="wide"
-)
+st.set_page_config(page_title="DNA Pattern Matching Analyzer", page_icon="🧬", layout="wide")
 
 # ============================
-# 🎨 DARK THEME STYLE
+# STYLE
 # ============================
 st.markdown("""
     <style>
-        body { background-color: #0E1117; color: #FAFAFA; }
-        .stApp { background-color: #0E1117; color: #FAFAFA; }
-        h1, h2, h3, h4, h5 { color: #00B4D8 !important; }
-        .stTextInput > div > div > input, .stTextArea textarea {
-            background-color: #1E2636;
-            color: white;
-            border: 1px solid #00B4D8;
+        body, .stApp { background-color: #0E1117; color: #FAFAFA; }
+        h1, h2, h3 { color: #00B4D8 !important; }
+        .stButton>button {
+            background-color: #00B4D8; color: white; font-weight: bold;
+            border-radius: 8px; border: none; padding: 0.6em 1.2em;
         }
-        .stButton > button {
-            background-color: #00B4D8;
-            color: white;
-            border-radius: 8px;
-            padding: 0.6em 1.2em;
-            font-weight: bold;
-            border: none;
-        }
-        .stButton > button:hover { background-color: #0077B6; color: white; }
+        .stButton>button:hover { background-color: #0077B6; }
         .result-box {
-            background-color: #1E2636;
-            padding: 15px;
-            border-radius: 10px;
-            border: 1px solid #00B4D8;
+            background-color: #1E2636; padding: 15px;
+            border-radius: 10px; border: 1px solid #00B4D8;
         }
-        .fasta-summary {
-            background-color: #1E2636;
-            border: 1px solid #00B4D8;
-            border-radius: 10px;
-            padding: 15px;
-            margin-top: 10px;
-        }
+        .highlight { color: #FFD60A; font-weight: bold; }
     </style>
 """, unsafe_allow_html=True)
 
 # ============================
-# 🧬 HEADER
+# HEADER
 # ============================
-st.markdown("<h1 style='text-align:center;'>🧬 DNA Pattern Matching Tool (FASTA + KMP + Boyer–Moore)</h1>", unsafe_allow_html=True)
-st.markdown("<br>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center;'>🧬 DNA Pattern Matching Analyzer</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center;'>Compare multiple string matching algorithms for DNA sequences</p>", unsafe_allow_html=True)
+st.markdown("---", unsafe_allow_html=True)
 
 # ============================
-# 📂 FILE UPLOAD
+# FILE UPLOAD / INPUT
 # ============================
-uploaded_file = st.file_uploader("📁 Upload a FASTA file", type=["fasta", "fa", "txt"])
+uploaded_files = st.file_uploader("📁 Upload FASTA files (you can select multiple)", 
+                                  type=["fasta", "fa", "txt"], 
+                                  accept_multiple_files=True)
 
-fasta_dict = {}
-if uploaded_file is not None:
-    fasta_content = uploaded_file.getvalue().decode("utf-8", errors="ignore")
-
-    # Split multiple FASTA entries
-    entries = fasta_content.strip().split(">")
-    for entry in entries:
-        if not entry.strip():
-            continue
-        lines = entry.strip().split("\n")
-        header = lines[0].strip()
-        seq = "".join(lines[1:]).upper()
-        seq = re.sub(r'[^ATCGN]', '', seq)
-        fasta_dict[header] = seq
-
-    st.success(f"✅ Loaded {len(fasta_dict)} FASTA sequence(s) successfully!")
-
-    # ============================
-    # 📊 FASTA SUMMARY TABLE
-    # ============================
-    summary_data = []
-    for header, seq in fasta_dict.items():
-        gc_content = (seq.count("G") + seq.count("C")) / len(seq) * 100 if len(seq) > 0 else 0
-        n_count = seq.count("N")
-        summary_data.append({
-            "Header": header[:80] + ("..." if len(header) > 80 else ""),
-            "Length (bp)": len(seq),
-            "GC%": round(gc_content, 2),
-            "N (Ambiguous)": n_count
-        })
-
-    df_summary = pd.DataFrame(summary_data)
-    st.markdown("<h4>📊 FASTA Summary</h4>", unsafe_allow_html=True)
-    st.dataframe(df_summary, use_container_width=True)
-
-    # Allow user to select which sequence to analyze
-    selected_header = st.selectbox("🔹 Select a sequence to analyze", list(fasta_dict.keys()))
-    dna_sequence = fasta_dict[selected_header]
+sequences = {}
+if uploaded_files:
+    for uploaded_file in uploaded_files:
+        fasta = uploaded_file.getvalue().decode("utf-8")
+        lines = fasta.strip().split("\n")
+        header = lines[0] if lines[0].startswith(">") else uploaded_file.name
+        sequence = "".join([l.strip() for l in lines if not l.startswith(">")]).upper()
+        sequence = re.sub(r'[^ATCG]', '', sequence)
+        sequences[header] = sequence
+        st.success(f"✅ Loaded: {header} ({len(sequence)} bp)")
 else:
-    dna_sequence = ""
+    seq_input = st.text_area("🧬 Enter DNA Sequence", placeholder="ATCGGATCGATCG...", height=120).strip().upper()
+    if seq_input:
+        sequences["Manual Entry"] = re.sub(r'[^ATCG]', '', seq_input)
+
+pattern = st.text_input("🔍 Enter Pattern to Search", placeholder="CGATCGA").strip().upper()
+
+algorithms = ["Naïve Search", "KMP", "Boyer–Moore", "Rabin–Karp", "Aho–Corasick"]
+selected_algos = st.multiselect("⚙️ Select Algorithms", algorithms, default=["KMP", "Boyer–Moore"])
 
 # ============================
-# 🧬 INPUTS
+# ALGORITHMS
 # ============================
-col1, col2 = st.columns(2)
+def naive_search(text, pattern):
+    return [i for i in range(len(text)-len(pattern)+1) if text[i:i+len(pattern)] == pattern]
 
-with col1:
-    if not dna_sequence:
-        dna_sequence = st.text_area(
-            "Enter DNA Sequence (if no file uploaded):",
-            placeholder="Example: ATCGGATCGATCGTACGATCGA...",
-            height=150
-        ).strip().upper()
-
-with col2:
-    pattern = st.text_input(
-        "Enter Pattern to Search:",
-        placeholder="Example: CGATCGA"
-    ).strip().upper()
-
-algorithm = st.radio(
-    "Select Algorithm:",
-    ["KMP (Knuth–Morris–Pratt)", "Boyer–Moore"],
-    horizontal=True
-)
-
-# ============================
-# 🔍 SEARCH ALGORITHMS
-# ============================
 def kmp_search(text, pattern):
-    lps = [0] * len(pattern)
+    lps = [0]*len(pattern)
     j = 0
     for i in range(1, len(pattern)):
         while j > 0 and pattern[i] != pattern[j]:
-            j = lps[j - 1]
+            j = lps[j-1]
         if pattern[i] == pattern[j]:
-            j += 1
-            lps[i] = j
-
-    positions = []
-    j = 0
+            j += 1; lps[i] = j
+    res, j = [], 0
     for i in range(len(text)):
         while j > 0 and text[i] != pattern[j]:
-            j = lps[j - 1]
+            j = lps[j-1]
         if text[i] == pattern[j]:
             j += 1
         if j == len(pattern):
-            positions.append(i - j + 1)
-            j = lps[j - 1]
-    return positions
-
+            res.append(i-j+1)
+            j = lps[j-1]
+    return res
 
 def boyer_moore_search(text, pattern):
     m, n = len(pattern), len(text)
     bad_char = {pattern[i]: i for i in range(m)}
-    positions = []
-    s = 0
+    res, s = [], 0
     while s <= n - m:
         j = m - 1
-        while j >= 0 and pattern[j] == text[s + j]:
+        while j >= 0 and pattern[j] == text[s+j]:
             j -= 1
         if j < 0:
-            positions.append(s)
-            s += m - bad_char.get(text[s + m], -1) if s + m < n else 1
+            res.append(s)
+            s += (m - bad_char.get(text[s+m], -1)) if s + m < n else 1
         else:
-            s += max(1, j - bad_char.get(text[s + j], -1))
-    return positions
+            s += max(1, j - bad_char.get(text[s+j], -1))
+    return res
+
+def rabin_karp(text, pattern, d=256, q=101):
+    m, n = len(pattern), len(text)
+    p = t = 0
+    h = pow(d, m-1) % q
+    res = []
+    for i in range(m):
+        p = (d*p + ord(pattern[i])) % q
+        t = (d*t + ord(text[i])) % q
+    for s in range(n - m + 1):
+        if p == t and text[s:s+m] == pattern:
+            res.append(s)
+        if s < n - m:
+            t = (d*(t - ord(text[s])*h) + ord(text[s+m])) % q
+            if t < 0:
+                t += q
+    return res
+
+def aho_corasick(text, pattern):
+    return naive_search(text, pattern)
+
+algo_funcs = {
+    "Naïve Search": naive_search,
+    "KMP": kmp_search,
+    "Boyer–Moore": boyer_moore_search,
+    "Rabin–Karp": rabin_karp,
+    "Aho–Corasick": aho_corasick
+}
 
 # ============================
-# 🚀 RUN SEARCH
+# RUN ANALYSIS
 # ============================
-if st.button("🔍 Find Pattern"):
-    if not dna_sequence or not pattern:
-        st.warning("⚠️ Please provide both DNA sequence and pattern.")
-    elif len(pattern) > len(dna_sequence):
-        st.error("❌ Pattern cannot be longer than the sequence.")
+if st.button("🔍 Search Pattern"):
+    if not sequences or not pattern:
+        st.warning("⚠️ Please enter both sequence(s) and pattern.")
     else:
-        with st.spinner("Running pattern matching..."):
-            progress = st.progress(0)
-            time.sleep(0.2)
+        all_results = []
+        for header, dna_sequence in sequences.items():
+            st.markdown(f"## 🧫 Results for **{header}** ({len(dna_sequence)} bp)")
+            results = []
+            for algo in selected_algos:
+                start = time.time()
+                matches = algo_funcs[algo](dna_sequence, pattern)
+                elapsed = time.time() - start
+                results.append({"Algorithm": algo, "Matches": len(matches), "Time (s)": round(elapsed, 5), "Positions": matches})
+            df = pd.DataFrame(results)
+            st.markdown("### 📊 Algorithm Comparison")
+            st.dataframe(df[["Algorithm", "Matches", "Time (s)"]], use_container_width=True)
 
-            if algorithm == "KMP (Knuth–Morris–Pratt)":
-                positions = kmp_search(dna_sequence, pattern)
-            else:
-                positions = boyer_moore_search(dna_sequence, pattern)
+            # Highlighted Visualization
+            st.markdown("### 🎨 Sequence Visualization")
+            for algo in results:
+                if algo["Matches"]:
+                    highlighted = list(dna_sequence)
+                    for pos in algo["Positions"]:
+                        for j in range(len(pattern)):
+                            if pos+j < len(highlighted):
+                                highlighted[pos+j] = f"<span class='highlight'>{highlighted[pos+j]}</span>"
+                    st.markdown(f"**{algo['Algorithm']}**:", unsafe_allow_html=True)
+                    st.markdown(f"<div class='result-box'>{''.join(highlighted[:400])}...</div>", unsafe_allow_html=True)
+                else:
+                    st.warning(f"{algo['Algorithm']}: No match found.")
 
-            progress.progress(100)
-            time.sleep(0.3)
+            # Performance Chart
+            st.markdown("### 📈 Performance Chart")
+            fig, ax = plt.subplots()
+            ax.bar(df["Algorithm"], df["Time (s)"], color="#00B4D8")
+            ax.set_ylabel("Execution Time (s)")
+            ax.set_title("Algorithm Performance Comparison")
+            st.pyplot(fig)
 
-        # ============================
-        # 📊 RESULTS
-        # ============================
-        if positions:
-            total_matches = len(positions)
-            percentage = (total_matches * len(pattern) / len(dna_sequence)) * 100
-            gc_content = (dna_sequence.count('G') + dna_sequence.count('C')) / len(dna_sequence) * 100
-
-            max_display = 50
-            display_positions = positions[:max_display]
-            if len(positions) > max_display:
-                display_positions.append("... (more)")
-
-            st.markdown(f"""
-            <div class='result-box'>
-                <h4>✅ Pattern Found!</h4>
-                <b>Sequence:</b> {selected_header if uploaded_file else "User Input"}<br>
-                <b>Matches:</b> {total_matches}<br>
-                <b>Sequence Length:</b> {len(dna_sequence):,} bases<br>
-                <b>Pattern Length:</b> {len(pattern)} bases<br>
-                <b>Match Coverage:</b> {percentage:.3f}% of total bases<br>
-                <b>GC Content:</b> {gc_content:.2f}%<br>
-                <b>Positions:</b> {display_positions}
-            </div>
-            """, unsafe_allow_html=True)
-
-            df = pd.DataFrame({'Match_Position': positions})
-            csv = df.to_csv(index=False)
-            st.download_button("📥 Download Match Positions (CSV)", csv, "match_positions.csv", "text/csv")
-        else:
-            st.error("❌ Pattern not found in the selected sequence.")
-
-# ============================
-# ℹ️ FOOTER
-# ============================
-st.markdown("""
----
-<p style='text-align:center; color:gray; font-size:0.9em;'>
-Developed by <b>Anas Jamshed</b> 🧠 | Advanced FASTA Pattern Matching Tool | Powered by Streamlit
-</p>
-""", unsafe_allow_html=True)
+        st.success("✅ Analysis complete for all uploaded sequences.")
