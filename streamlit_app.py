@@ -148,6 +148,9 @@ algo_funcs = {
 # ==========================
 # RUN ANALYSIS
 # ==========================
+if "results_stored" not in st.session_state:
+    st.session_state.results_stored = None
+
 if st.button("🔍 Search Pattern"):
     if not sequences or not pattern:
         st.warning("⚠️ Please enter both sequence(s) and pattern.")
@@ -165,7 +168,6 @@ if st.button("🔍 Search Pattern"):
                     "Sequence Name": header,
                     "Algorithm": algo,
                     "Matches": len(matches),
-                    "Positions": matches,
                     "Time (s)": round(elapsed, 5)
                 })
 
@@ -173,23 +175,23 @@ if st.button("🔍 Search Pattern"):
             all_results.append(df)
 
             st.markdown("### 📊 Algorithm Comparison")
-            st.dataframe(df[["Algorithm", "Matches", "Time (s)"]], use_container_width=True)
+            st.dataframe(df, use_container_width=True)
 
             # Visualization
             st.markdown("### 🎨 Sequence Visualization")
             for algo in results:
                 if algo["Matches"]:
                     highlighted = list(dna_sequence)
-                    for pos in algo["Positions"]:
+                    for pos in algo_funcs[algo["Algorithm"]](dna_sequence, pattern):
                         for j in range(len(pattern)):
-                            if pos+j < len(highlighted):
-                                highlighted[pos+j] = f"<span class='highlight'>{highlighted[pos+j]}</span>"
+                            if pos + j < len(highlighted):
+                                highlighted[pos + j] = f"<span class='highlight'>{highlighted[pos + j]}</span>"
                     st.markdown(f"**{algo['Algorithm']}**:", unsafe_allow_html=True)
                     st.markdown(f"<div class='result-box'>{''.join(highlighted[:400])}...</div>", unsafe_allow_html=True)
                 else:
                     st.warning(f"{algo['Algorithm']}: No match found.")
 
-            # Performance Chart
+            # Chart
             st.markdown("### 📈 Performance Chart")
             fig, ax = plt.subplots()
             ax.bar(df["Algorithm"], df["Time (s)"], color="#00B4D8")
@@ -197,17 +199,23 @@ if st.button("🔍 Search Pattern"):
             ax.set_title("Algorithm Performance Comparison")
             st.pyplot(fig)
 
-        # ==========================
-        # CSV DOWNLOAD SECTION
-        # ==========================
+        # Combine and store results in session
         combined_df = pd.concat(all_results, ignore_index=True)
-        csv_buffer = io.StringIO()
-        combined_df.to_csv(csv_buffer, index=False)
-        st.download_button(
-            label="📥 Download Results as CSV",
-            data=csv_buffer.getvalue(),
-            file_name="dna_pattern_results.csv",
-            mime="text/csv"
-        )
+        st.session_state.results_stored = combined_df
 
-        st.success("✅ Analysis complete and CSV file ready for download!")
+        st.success("✅ Analysis complete! Scroll down to download results.")
+
+# ==========================
+# DOWNLOAD CSV SECTION
+# ==========================
+if st.session_state.results_stored is not None:
+    csv_buffer = io.StringIO()
+    st.session_state.results_stored.to_csv(csv_buffer, index=False)
+    st.download_button(
+        label="📥 Download Results as CSV",
+        data=csv_buffer.getvalue(),
+        file_name="dna_pattern_results.csv",
+        mime="text/csv"
+    )
+
+    st.success("✅ Analysis complete and CSV file ready for download!")
