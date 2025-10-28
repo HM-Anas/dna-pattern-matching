@@ -1,18 +1,23 @@
-
-#Importing Libraries
+# ==========================
+# DNA Pattern Matching Analyzer 🧬 (Streamlit App)
+# ==========================
 import streamlit as st
-import re, time
+import re, time, io
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# ============================
+# ==========================
 # PAGE CONFIG
-# ============================
-st.set_page_config(page_title="DNA Pattern Matching Analyzer", page_icon="🧬", layout="wide")
+# ==========================
+st.set_page_config(
+    page_title="DNA Pattern Matching Analyzer",
+    page_icon="🧬",
+    layout="wide"
+)
 
-# ============================
-# STYLE
-# ============================
+# ==========================
+# STYLING
+# ==========================
 st.markdown("""
     <style>
         body, .stApp { background-color: #0E1117; color: #FAFAFA; }
@@ -25,24 +30,28 @@ st.markdown("""
         .result-box {
             background-color: #1E2636; padding: 15px;
             border-radius: 10px; border: 1px solid #00B4D8;
+            font-family: monospace; line-height: 1.6;
+            word-wrap: break-word;
         }
         .highlight { color: #FFD60A; font-weight: bold; }
     </style>
 """, unsafe_allow_html=True)
 
-# ============================
+# ==========================
 # HEADER
-# ============================
+# ==========================
 st.markdown("<h1 style='text-align:center;'>🧬 DNA Pattern Matching Analyzer</h1>", unsafe_allow_html=True)
 st.markdown("<p style='text-align:center;'>Compare multiple string matching algorithms for DNA sequences</p>", unsafe_allow_html=True)
 st.markdown("---", unsafe_allow_html=True)
 
-# ============================
+# ==========================
 # FILE UPLOAD / INPUT
-# ============================
-uploaded_files = st.file_uploader("📁 Upload FASTA files (you can select multiple)", 
-                                  type=["fasta", "fa", "txt"], 
-                                  accept_multiple_files=True)
+# ==========================
+uploaded_files = st.file_uploader(
+    "📁 Upload FASTA files (you can select multiple)",
+    type=["fasta", "fa", "txt"],
+    accept_multiple_files=True
+)
 
 sequences = {}
 if uploaded_files:
@@ -62,11 +71,15 @@ else:
 pattern = st.text_input("🔍 Enter Pattern to Search", placeholder="CGATCGA").strip().upper()
 
 algorithms = ["Naïve Search", "KMP", "Boyer–Moore", "Rabin–Karp", "Aho–Corasick"]
-selected_algos = st.multiselect("⚙️ Select Algorithms", algorithms, default=["KMP", "Boyer–Moore"])
+selected_algos = st.multiselect(
+    "⚙️ Select Algorithms",
+    algorithms,
+    default=["KMP", "Boyer–Moore"]
+)
 
-# ============================
+# ==========================
 # ALGORITHMS
-# ============================
+# ==========================
 def naive_search(text, pattern):
     return [i for i in range(len(text)-len(pattern)+1) if text[i:i+len(pattern)] == pattern]
 
@@ -132,9 +145,9 @@ algo_funcs = {
     "Aho–Corasick": aho_corasick
 }
 
-# ============================
+# ==========================
 # RUN ANALYSIS
-# ============================
+# ==========================
 if st.button("🔍 Search Pattern"):
     if not sequences or not pattern:
         st.warning("⚠️ Please enter both sequence(s) and pattern.")
@@ -142,17 +155,27 @@ if st.button("🔍 Search Pattern"):
         all_results = []
         for header, dna_sequence in sequences.items():
             st.markdown(f"## 🧫 Results for **{header}** ({len(dna_sequence)} bp)")
+
             results = []
             for algo in selected_algos:
                 start = time.time()
                 matches = algo_funcs[algo](dna_sequence, pattern)
                 elapsed = time.time() - start
-                results.append({"Algorithm": algo, "Matches": len(matches), "Time (s)": round(elapsed, 5), "Positions": matches})
+                results.append({
+                    "Sequence Name": header,
+                    "Algorithm": algo,
+                    "Matches": len(matches),
+                    "Positions": matches,
+                    "Time (s)": round(elapsed, 5)
+                })
+
             df = pd.DataFrame(results)
+            all_results.append(df)
+
             st.markdown("### 📊 Algorithm Comparison")
             st.dataframe(df[["Algorithm", "Matches", "Time (s)"]], use_container_width=True)
 
-            # Highlighted Visualization
+            # Visualization
             st.markdown("### 🎨 Sequence Visualization")
             for algo in results:
                 if algo["Matches"]:
@@ -174,4 +197,17 @@ if st.button("🔍 Search Pattern"):
             ax.set_title("Algorithm Performance Comparison")
             st.pyplot(fig)
 
-        st.success("✅ Analysis complete for all uploaded sequences.")
+        # ==========================
+        # CSV DOWNLOAD SECTION
+        # ==========================
+        combined_df = pd.concat(all_results, ignore_index=True)
+        csv_buffer = io.StringIO()
+        combined_df.to_csv(csv_buffer, index=False)
+        st.download_button(
+            label="📥 Download Results as CSV",
+            data=csv_buffer.getvalue(),
+            file_name="dna_pattern_results.csv",
+            mime="text/csv"
+        )
+
+        st.success("✅ Analysis complete and CSV file ready for download!")
