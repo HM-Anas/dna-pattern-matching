@@ -42,9 +42,11 @@ st.markdown("---", unsafe_allow_html=True)
 # ============================
 # FILE UPLOAD / INPUT
 # ============================
-uploaded_files = st.file_uploader("📁 Upload FASTA files (you can select multiple)", 
-                                  type=["fasta", "fa", "txt"], 
-                                  accept_multiple_files=True)
+uploaded_files = st.file_uploader(
+    "📁 Upload FASTA files (you can select multiple)",
+    type=["fasta", "fa", "txt"],
+    accept_multiple_files=True
+)
 
 sequences = {}
 if uploaded_files:
@@ -79,7 +81,8 @@ def kmp_search(text, pattern):
         while j > 0 and pattern[i] != pattern[j]:
             j = lps[j-1]
         if pattern[i] == pattern[j]:
-            j += 1; lps[i] = j
+            j += 1
+            lps[i] = j
     res, j = [], 0
     for i in range(len(text)):
         while j > 0 and text[i] != pattern[j]:
@@ -145,28 +148,29 @@ if st.button("🔍 Search Pattern"):
 
         for header, dna_sequence in sequences.items():
             st.markdown(f"## 🧫 Results for **{header}** ({len(dna_sequence)} bp)")
-            results = []
+            seq_results = []
             for algo in selected_algos:
                 start = time.time()
                 matches = algo_funcs[algo](dna_sequence, pattern)
                 elapsed = time.time() - start
-                results.append({
+                seq_results.append({
                     "Sequence": header,
                     "Algorithm": algo,
                     "Matches": len(matches),
                     "Time (s)": round(elapsed, 5),
                     "Positions": matches
                 })
-            df = pd.DataFrame(results)
+
+            df = pd.DataFrame(seq_results)
             all_results.append(df)
 
-            # Display results
+            # Display results once per sequence
             st.markdown("### 📊 Algorithm Comparison")
             st.dataframe(df[["Algorithm", "Matches", "Time (s)"]], use_container_width=True)
 
             # Visualization
             st.markdown("### 🎨 Sequence Visualization")
-            for algo in results:
+            for algo in seq_results:
                 if algo["Matches"]:
                     highlighted = list(dna_sequence)
                     for pos in algo["Positions"]:
@@ -178,25 +182,26 @@ if st.button("🔍 Search Pattern"):
                 else:
                     st.warning(f"{algo['Algorithm']}: No match found.")
 
-            # Chart
+            # Chart once per sequence
             st.markdown("### 📈 Performance Chart")
             fig, ax = plt.subplots()
             ax.bar(df["Algorithm"], df["Time (s)"], color="#00B4D8")
             ax.set_ylabel("Execution Time (s)")
-            ax.set_title("Algorithm Performance Comparison")
+            ax.set_title(f"Algorithm Performance: {header}")
             st.pyplot(fig)
 
         # ============================
-        # SAVE ALL RESULTS TO CSV
+        # COMBINE & DOWNLOAD CSV 
         # ============================
-        combined_df = pd.concat(all_results, ignore_index=True)
+        combined_df = pd.concat(all_results, ignore_index=True).drop_duplicates()
         csv_buffer = BytesIO()
         combined_df.to_csv(csv_buffer, index=False)
+
         st.download_button(
-            label="💾 Download Results as CSV",
+            label="💾 Download All Results as CSV",
             data=csv_buffer.getvalue(),
-            file_name="dna_pattern_matching_results.csv",
+            file_name="dna_pattern_results.csv",
             mime="text/csv"
         )
 
-        st.success("✅ Analysis complete and results saved successfully!")
+        st.success("✅ Analysis complete — results ready for download!")
