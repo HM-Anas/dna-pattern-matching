@@ -1,8 +1,11 @@
-#Importing Libraries
+# ============================
+# IMPORTS
+# ============================
 import streamlit as st
 import re, time
 import pandas as pd
 import matplotlib.pyplot as plt
+from io import BytesIO
 
 # ============================
 # PAGE CONFIG
@@ -139,6 +142,7 @@ if st.button("🔍 Search Pattern"):
         st.warning("⚠️ Please enter both sequence(s) and pattern.")
     else:
         all_results = []
+
         for header, dna_sequence in sequences.items():
             st.markdown(f"## 🧫 Results for **{header}** ({len(dna_sequence)} bp)")
             results = []
@@ -146,12 +150,21 @@ if st.button("🔍 Search Pattern"):
                 start = time.time()
                 matches = algo_funcs[algo](dna_sequence, pattern)
                 elapsed = time.time() - start
-                results.append({"Algorithm": algo, "Matches": len(matches), "Time (s)": round(elapsed, 5), "Positions": matches})
+                results.append({
+                    "Sequence": header,
+                    "Algorithm": algo,
+                    "Matches": len(matches),
+                    "Time (s)": round(elapsed, 5),
+                    "Positions": matches
+                })
             df = pd.DataFrame(results)
+            all_results.append(df)
+
+            # Display results
             st.markdown("### 📊 Algorithm Comparison")
             st.dataframe(df[["Algorithm", "Matches", "Time (s)"]], use_container_width=True)
 
-            # Highlighted Visualization
+            # Visualization
             st.markdown("### 🎨 Sequence Visualization")
             for algo in results:
                 if algo["Matches"]:
@@ -165,7 +178,7 @@ if st.button("🔍 Search Pattern"):
                 else:
                     st.warning(f"{algo['Algorithm']}: No match found.")
 
-            # Performance Chart
+            # Chart
             st.markdown("### 📈 Performance Chart")
             fig, ax = plt.subplots()
             ax.bar(df["Algorithm"], df["Time (s)"], color="#00B4D8")
@@ -173,4 +186,17 @@ if st.button("🔍 Search Pattern"):
             ax.set_title("Algorithm Performance Comparison")
             st.pyplot(fig)
 
-        st.success("✅ Analysis complete for all uploaded sequences.")
+        # ============================
+        # SAVE ALL RESULTS TO CSV
+        # ============================
+        combined_df = pd.concat(all_results, ignore_index=True)
+        csv_buffer = BytesIO()
+        combined_df.to_csv(csv_buffer, index=False)
+        st.download_button(
+            label="💾 Download Results as CSV",
+            data=csv_buffer.getvalue(),
+            file_name="dna_pattern_matching_results.csv",
+            mime="text/csv"
+        )
+
+        st.success("✅ Analysis complete and results saved successfully!")
