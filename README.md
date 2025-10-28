@@ -1,36 +1,87 @@
-# 🧬 DNA Pattern Matching Tool (KMP + Boyer–Moore)
+# 🧬 DNA Pattern Matching using Multiple String-Matching Algorithms
 
-An interactive web application that allows users to perform **DNA sequence pattern matching** using two classic algorithms — **Knuth–Morris–Pratt (KMP)** and **Boyer–Moore**.  
 
-The app is built with **Streamlit** and provides an intuitive interface for searching specific DNA motifs or patterns within large sequences.  
+An interactive bioinformatics web tool built with Streamlit that enables users to perform DNA sequence pattern matching using multiple string matching algorithms — including Naïve, KMP, Boyer–Moore, Rabin–Karp, and Aho–Corasick.
 
----
+This application supports multiple FASTA uploads, provides runtime comparisons, and visually highlights matching motifs within each sequence in an elegant dark mode interface.
 
-## ⚙️ Features
+⚙️ Features
 
-✅ Upload a FASTA file or paste a DNA sequence manually  
-✅ Search for custom DNA patterns (e.g., `ATG`, `CGTAA`)  
-✅ Choose between **KMP** or **Boyer–Moore** algorithms  
-✅ View **match counts**, **percent of total bases matched**, and **highlighted results**  
-✅ Elegant **dark mode interface** with dynamic highlighting  
+✅ Upload multiple FASTA files simultaneously
+✅ Or manually enter a custom DNA sequence
+✅ Search for custom DNA motifs (e.g., ATGCGT, CGTAA)
+✅ Choose one or more algorithms to compare
+✅ View detailed results:
 
----
+Number of matches
 
-## 🧠 Algorithms Implemented
+Runtime (execution time in seconds)
 
-### 🔹 Knuth–Morris–Pratt (KMP)
-- Efficient, linear-time pattern searching algorithm  
-- Preprocesses the pattern using an LPS (Longest Prefix Suffix) table  
+Positions of matches
+✅ Highlighted sequence visualization showing match regions
+✅ Bar chart comparison of algorithm performance
+✅ Sleek dark mode UI with interactive elements
 
-### 🔹 Boyer–Moore
-- Searches patterns from right to left using bad-character heuristic  
-- Often faster in practice for large text sequences  
+🧠 Algorithms Implemented
+🔹 Naïve Search
 
----
+A straightforward approach that checks for the pattern at every position of the sequence.
 
-## 🚀 How to Run Locally
+🔹 Knuth–Morris–Pratt (KMP)
 
-### 1️⃣ Clone or Download the Repository
-```bash
+Linear-time pattern searching algorithm
+
+Uses the Longest Prefix Suffix (LPS) preprocessing table to skip redundant comparisons
+
+🔹 Boyer–Moore
+
+Efficient for large sequences
+
+Uses the bad character heuristic to skip unnecessary comparisons
+
+🔹 Rabin–Karp
+
+Hash-based string matching algorithm
+
+Compares hash values instead of characters for faster pattern search
+
+🔹 Aho–Corasick
+
+Multi-pattern search algorithm
+
+Currently simplified here for single-pattern demonstration
+
+🚀 How to Run Locally
+1️⃣ Clone or Download the Repository
 git clone https://github.com/HM-Anas/dna-pattern-matching.git
 cd dna-pattern-matching
+
+2️⃣ Install Dependencies
+
+Make sure you have Python 3.9+ and pip installed.
+
+pip install streamlit pandas matplotlib
+
+3️⃣ Run the Streamlit App
+streamlit run app.py
+
+4️⃣ Open in Browser
+
+The app will open automatically at:
+👉 http://localhost:8501
+
+🌐 Live Demo
+
+🔗 Launch the App on Streamlit Cloud
+
+🧩 Example Usage
+
+Upload one or more .fasta or .fa files
+
+Enter a pattern like ATGCGT
+
+Select algorithms (e.g., KMP, Boyer–Moore)
+
+Click Search Pattern
+
+View highlighted matches, runtime comparison table, and performance chart
