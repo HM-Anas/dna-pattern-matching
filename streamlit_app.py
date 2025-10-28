@@ -203,7 +203,7 @@ if st.button("🔍 Search Pattern"):
         combined_df = pd.concat(all_results, ignore_index=True)
         st.session_state.results_stored = combined_df
 
-        st.success("✅ Analysis complete! Scroll down to download results.")
+        st.success("✅ Analysis complete! and CSV file ready for download!")
 
 # ==========================
 # DOWNLOAD CSV SECTION
@@ -217,5 +217,3 @@ if st.session_state.results_stored is not None:
         file_name="dna_pattern_results.csv",
         mime="text/csv"
     )
-
-    st.success("✅ Analysis complete and CSV file ready for download!")
