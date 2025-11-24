@@ -24,11 +24,9 @@ Positions of matches
 
 🧠 Algorithms Implemented
 🔹 Naïve Search
-
 A straightforward approach that checks for the pattern at every position of the sequence.
 
 🔹 Knuth–Morris–Pratt (KMP)
-
 Linear-time pattern searching algorithm
 
 Uses the Longest Prefix Suffix (LPS) preprocessing table to skip redundant comparisons
@@ -66,9 +64,8 @@ pip install streamlit pandas matplotlib
 streamlit run app.py
 
 4️⃣ Open in Browser
-
 The app will open automatically at:
-👉 http://localhost:8501
+👉https://dna-pattern-matching-app-ned.streamlit.app/
 
 🌐 Live Demo
 
@@ -82,6 +79,6 @@ Enter a pattern like ATGCGT
 
 Select algorithms (e.g., KMP, Boyer–Moore)
 
-Click Search Pattern
+Click Search Pattern : Single or Multiple
 
 View highlighted matches, runtime comparison table, and performance chart
