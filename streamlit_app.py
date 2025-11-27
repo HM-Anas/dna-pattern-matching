@@ -74,7 +74,7 @@ else:
     if seq_input:
         sequences["Manual Entry"] = re.sub(r'[^ATCG]', '', seq_input)
 
-pattern_input = st.text_input("🔍 Enter Pattern(s)", placeholder="CGA,ATG,CCC,TAA").strip().upper()
+pattern_input = st.text_input("🔍 Enter Pattern(s)", placeholder="CGA,ATGC,CCCGA,TAACTG").strip().upper()
 
 algorithms = ["Naïve Search", "KMP", "Boyer–Moore", "Rabin–Karp", "Aho–Corasick"]
 selected_algos = st.multiselect("⚙️ Select Algorithms", algorithms, default=algorithms)
