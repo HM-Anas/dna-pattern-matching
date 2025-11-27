@@ -432,6 +432,6 @@ if st.session_state.results_stored is not None:
             st.session_state.results_stored,
             st.session_state.figures
         )
-        st.download_button("📄 Download PDF", pdf_bytes, "dna_report.pdf")
+        st.download_button("📄 Download PDF Report", pdf_bytes, "dna_report.pdf")
     else:
         st.warning("Install reportlab for PDF export: pip install reportlab")
