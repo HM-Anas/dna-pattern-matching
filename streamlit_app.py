@@ -425,12 +425,12 @@ if st.session_state.results_stored is not None:
     st.markdown("### 📉 Individual Chart Downloads")
     for name, fig_bytes in st.session_state.figures:
         st.download_button(
-            f"📥 Download {name}",
+            label=f"📥 Download {name}",
             data=fig_bytes,
             file_name=name,
-            mime="image/png"
-        )
-
+            mime="image/png",
+            key=f"download_{name}"
+)
     # PDF Export
     if reportlab_available:
         pdf_bytes = generate_pdf_report(
@@ -443,7 +443,8 @@ if st.session_state.results_stored is not None:
             "📄 Download Full PDF Report",
             data=pdf_bytes,
             file_name="dna_report.pdf",
-            mime="application/pdf"
+            mime="application/pdf",
+            key="download_pdf"
         )
     else:
         st.warning("⚠ Install reportlab to enable PDF export: pip install reportlab")
