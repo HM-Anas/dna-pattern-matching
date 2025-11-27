@@ -84,7 +84,7 @@ else:
 
 pattern_input = st.text_input(
     "🔍 Enter Pattern(s) to Search (comma separated for multiple)",
-    placeholder="CGATCGA,ATGCGT"
+    placeholder="CGA,ATG,CCC,TAA"
 ).strip().upper()
 
 algorithms = ["Naïve Search", "KMP", "Boyer–Moore", "Rabin–Karp", "Aho–Corasick"]
@@ -448,3 +448,6 @@ if st.session_state.results_stored is not None:
         )
     else:
         st.warning("⚠ Install reportlab to enable PDF export: pip install reportlab")
+
+
+
