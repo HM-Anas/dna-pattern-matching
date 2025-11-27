@@ -62,7 +62,7 @@ st.markdown("---", unsafe_allow_html=True)
 # ==========================
 uploaded_files = st.file_uploader(
     "📁 Upload FASTA files (you can select multiple)",
-    type=["fasta","fa","txt"],
+    type=["fasta", "fa", "txt"],
     accept_multiple_files=True
 )
 
@@ -98,82 +98,86 @@ selected_algos = st.multiselect("⚙️ Select Algorithms", algorithms, default=
 def naive_search(text, pattern):
     comparisons = 0
     results = []
-    for i in range(len(text)-len(pattern)+1):
+    for i in range(len(text) - len(pattern) + 1):
         comparisons += 1
         match = True
         for j in range(len(pattern)):
             comparisons += 1
-            if text[i+j] != pattern[j]:
+            if text[i + j] != pattern[j]:
                 match = False
                 break
         if match:
             results.append(i)
     return results, comparisons
 
+
 def kmp_search(text, pattern):
     comparisons = 0
-    lps=[0]*len(pattern)
-    j=0
-    for i in range(1,len(pattern)):
-        while j>0 and pattern[i]!=pattern[j]:
-            j=lps[j-1]
+    lps = [0] * len(pattern)
+    j = 0
+    for i in range(1, len(pattern)):
+        while j > 0 and pattern[i] != pattern[j]:
+            j = lps[j - 1]
             comparisons += 1
         comparisons += 1
-        if pattern[i]==pattern[j]:
-            j+=1
-            lps[i]=j
-    res=[]
-    j=0
+        if pattern[i] == pattern[j]:
+            j += 1
+            lps[i] = j
+    res = []
+    j = 0
     for i in range(len(text)):
-        while j>0 and text[i]!=pattern[j]:
-            j=lps[j-1]
+        while j > 0 and text[i] != pattern[j]:
+            j = lps[j - 1]
             comparisons += 1
         comparisons += 1
-        if text[i]==pattern[j]:
-            j+=1
-        if j==len(pattern):
-            res.append(i-j+1)
-            j=lps[j-1]
+        if text[i] == pattern[j]:
+            j += 1
+        if j == len(pattern):
+            res.append(i - j + 1)
+            j = lps[j - 1]
     return res, comparisons
+
 
 def boyer_moore_search(text, pattern):
     comparisons = 0
-    m,n=len(pattern),len(text)
-    bad_char={pattern[i]:i for i in range(m)}
-    res=[]
-    s=0
-    while s<=n-m:
-        j=m-1
-        while j>=0:
-            comparisons+=1
-            if pattern[j]!=text[s+j]:
+    m, n = len(pattern), len(text)
+    bad_char = {pattern[i]: i for i in range(m)}
+    res = []
+    s = 0
+    while s <= n - m:
+        j = m - 1
+        while j >= 0:
+            comparisons += 1
+            if pattern[j] != text[s + j]:
                 break
-            j-=1
-        if j<0:
+            j -= 1
+        if j < 0:
             res.append(s)
-            s+=(m-bad_char.get(text[s+m],-1)) if s+m<n else 1
+            s += (m - bad_char.get(text[s + m], -1)) if s + m < n else 1
         else:
-            s+=max(1,j-bad_char.get(text[s+j],-1))
+            s += max(1, j - bad_char.get(text[s + j], -1))
     return res, comparisons
+
 
 def rabin_karp(text, pattern, d=256, q=101):
     comparisons = 0
-    m,n=len(pattern),len(text)
-    p=t=0
-    h=pow(d,m-1)%q
-    res=[]
+    m, n = len(pattern), len(text)
+    p = t = 0
+    h = pow(d, m - 1) % q
+    res = []
     for i in range(m):
-        p=(d*p+ord(pattern[i]))%q
-        t=(d*t+ord(text[i]))%q
-    for s in range(n-m+1):
-        comparisons+=1
-        if p==t:
-            if text[s:s+m]==pattern:
+        p = (d * p + ord(pattern[i])) % q
+        t = (d * t + ord(text[i])) % q
+    for s in range(n - m + 1):
+        comparisons += 1
+        if p == t:
+            if text[s:s + m] == pattern:
                 res.append(s)
-                comparisons+=m
-        if s<n-m:
-            t=(d*(t-ord(text[s])*h)+ord(text[s+m]))%q
-            t+=q if t<0 else 0
+                comparisons += m
+        if s < n - m:
+            t = (d * (t - ord(text[s]) * h) + ord(text[s + m])) % q
+            if t < 0:
+                t += q
     return res, comparisons
 
 
@@ -182,55 +186,56 @@ def rabin_karp(text, pattern, d=256, q=101):
 # =====================
 class AhoNode:
     def __init__(self):
-        self.children={}
-        self.fail=None
-        self.output=[]
+        self.children = {}
+        self.fail = None
+        self.output = []
+
 
 class AhoCorasick:
-    def __init__(self,patterns):
-        self.root=AhoNode()
+    def __init__(self, patterns):
+        self.root = AhoNode()
         self.build_trie(patterns)
         self.build_failure_links()
 
-    def build_trie(self,patterns):
+    def build_trie(self, patterns):
         for pat in patterns:
-            node=self.root
+            node = self.root
             for c in pat:
                 if c not in node.children:
-                    node.children[c]=AhoNode()
-                node=node.children[c]
+                    node.children[c] = AhoNode()
+                node = node.children[c]
             node.output.append(pat)
 
     def build_failure_links(self):
-        queue=deque()
+        queue = deque()
         for child in self.root.children.values():
-            child.fail=self.root
+            child.fail = self.root
             queue.append(child)
         while queue:
-            current=queue.popleft()
-            for c,child in current.children.items():
-                f=current.fail
+            current = queue.popleft()
+            for c, child in current.children.items():
+                f = current.fail
                 while f and c not in f.children:
-                    f=f.fail
-                child.fail=f.children[c] if f and c in f.children else self.root
-                child.output+=child.fail.output
+                    f = f.fail
+                child.fail = f.children[c] if f and c in f.children else self.root
+                child.output += child.fail.output
                 queue.append(child)
 
-    def search(self,text):
-        node=self.root
-        res=defaultdict(list)
+    def search(self, text):
+        node = self.root
+        res = defaultdict(list)
         comparisons = 0
-        for i,c in enumerate(text):
-            comparisons+=1
+        for i, c in enumerate(text):
+            comparisons += 1
             while node and c not in node.children:
-                node=node.fail
-                comparisons+=1
+                node = node.fail
+                comparisons += 1
             if not node:
-                node=self.root
+                node = self.root
                 continue
-            node=node.children[c]
+            node = node.children[c]
             for pat in node.output:
-                res[pat].append(i-len(pat)+1)
+                res[pat].append(i - len(pat) + 1)
         return res, comparisons
 
 
@@ -242,6 +247,7 @@ def fig_to_bytes(fig, format="png"):
     fig.savefig(buf, format=format, dpi=300, bbox_inches="tight")
     buf.seek(0)
     return buf.getvalue()
+
 
 def generate_pdf_report(title, results_df, figures):
     if not reportlab_available:
@@ -260,10 +266,10 @@ def generate_pdf_report(title, results_df, figures):
 
     table = Table(table_data)
     table.setStyle(TableStyle([
-        ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#00B4D8")),
-        ("TEXTCOLOR", (0,0), (-1,0), colors.white),
-        ("GRID", (0,0), (-1,-1), 0.25, colors.grey),
-        ("ALIGN", (0,0), (-1,-1), "CENTER"),
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#00B4D8")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
+        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
     ]))
 
     story.append(table)
@@ -285,7 +291,7 @@ def generate_pdf_report(title, results_df, figures):
 # RUN ANALYSIS
 # ==========================
 if "results_stored" not in st.session_state:
-    st.session_state.results_stored=None
+    st.session_state.results_stored = None
 
 if "figures" not in st.session_state:
     st.session_state.figures = []
@@ -296,22 +302,25 @@ if st.button("🔍 Search Pattern"):
         st.warning("⚠️ Please enter sequence(s) and pattern(s).")
 
     else:
-        patterns_list = [p.strip() for p in pattern_input.split(",") if p.strip()]
-        all_results=[]
+        # reset figures on each new run
+        st.session_state.figures = []
 
-        for header,dna_sequence in sequences.items():
+        patterns_list = [p.strip() for p in pattern_input.split(",") if p.strip()]
+        all_results = []
+
+        for header, dna_sequence in sequences.items():
             st.markdown(f"## 🧫 Results for **{header}** ({len(dna_sequence)} bp)")
-            results=[]
+            results = []
 
             for algo in selected_algos:
 
-                if algo=="Aho–Corasick":
-                    if len(patterns_list)<2:
+                if algo == "Aho–Corasick":
+                    if len(patterns_list) < 2:
                         st.warning("⚠️ Aho–Corasick requires multiple patterns.")
                         continue
-                    start=time.time()
+                    start = time.time()
                     matches, comparisons = AhoCorasick(patterns_list).search(dna_sequence)
-                    elapsed=time.time()-start
+                    elapsed = time.time() - start
                     total_matches = sum(len(v) for v in matches.values())
                     results.append({
                         "Algorithm": algo,
@@ -320,22 +329,22 @@ if st.button("🔍 Search Pattern"):
                         "Comparisons": comparisons,
                         "Time (s)": round(elapsed, 5)
                     })
-                    results.append({"Algorithm":"","Pattern":"","Matches":"","Comparisons":"","Time (s)":""})
+                    results.append({"Algorithm": "", "Pattern": "", "Matches": "", "Comparisons": "", "Time (s)": ""})
 
                 else:
-                    pattern_results=[]
-                    total_comparisons=0
-                    total_time=0
+                    pattern_results = []
+                    total_comparisons = 0
+                    total_time = 0
 
                     for pat in patterns_list:
-                        start_pat=time.time()
+                        start_pat = time.time()
                         matches, comp = {
                             "Naïve Search": naive_search,
                             "KMP": kmp_search,
                             "Boyer–Moore": boyer_moore_search,
                             "Rabin–Karp": rabin_karp
                         }[algo](dna_sequence, pat)
-                        elapsed_pat=time.time()-start_pat
+                        elapsed_pat = time.time() - start_pat
 
                         results.append({
                             "Algorithm": algo,
@@ -345,8 +354,8 @@ if st.button("🔍 Search Pattern"):
                             "Time (s)": round(elapsed_pat, 5)
                         })
                         pattern_results.append(len(matches))
-                        total_comparisons+=comp
-                        total_time+=elapsed_pat
+                        total_comparisons += comp
+                        total_time += elapsed_pat
 
                     results.append({
                         "Algorithm": algo,
@@ -355,9 +364,9 @@ if st.button("🔍 Search Pattern"):
                         "Comparisons": total_comparisons,
                         "Time (s)": round(total_time, 5)
                     })
-                    results.append({"Algorithm":"","Pattern":"","Matches":"","Comparisons":"","Time (s)":""})
+                    results.append({"Algorithm": "", "Pattern": "", "Matches": "", "Comparisons": "", "Time (s)": ""})
 
-            df=pd.DataFrame(results)
+            df = pd.DataFrame(results)
             all_results.append(df)
 
             st.markdown("### 📊 Performance Results")
@@ -367,7 +376,7 @@ if st.button("🔍 Search Pattern"):
             df_chart = df[(df["Pattern"] == "TOTAL") | (df["Pattern"] == "ALL PATTERNS")]
             df_chart = df_chart[df_chart["Algorithm"] != ""]
 
-            fig, ax = plt.subplots(figsize=(10,5))
+            fig, ax = plt.subplots(figsize=(10, 5))
             ax.bar(df_chart["Algorithm"], df_chart["Time (s)"], color="#00B4D8")
             ax.set_ylabel("Time (s)")
             ax.set_title(f"Algorithm Performance — {header}")
@@ -376,21 +385,65 @@ if st.button("🔍 Search Pattern"):
 
             st.pyplot(fig)
 
-            st.session_state.figures.append((
-                f"performance_chart_{header}.png",
-                fig_to_bytes(fig, "png")
-            ))
+            # ================================
+# PATTERN VISUALIZATION (500 bp)
+# ================================
+st.markdown("## 🔬 Pattern Visualizations (500 bp window for each pattern)")
 
-        combined_df=pd.concat(all_results, ignore_index=True)
-        st.session_state.results_stored=combined_df
+for pat in patterns_list:
+    st.markdown(f"### 🧬 Pattern: **{pat}**")
+
+    # Find all matches using naive search (fastest for full match list)
+    matches, _ = naive_search(dna_sequence, pat)
+    total_matches = len(matches)
+
+    st.success(f"✅ {total_matches} match(es) found in entire sequence")
+
+    if total_matches == 0:
+        st.info("No occurrences of this pattern found.")
+        continue
+
+    # Take first match for visualization region
+    start_pos = max(0, matches[0] - 50)
+    end_pos = min(len(dna_sequence), start_pos + 500)
+    window_seq = dna_sequence[start_pos:end_pos]
+
+    st.info(f"📍 Showing sequence from position {start_pos} to {end_pos} (length: 500 bp)")
+
+    # Highlight pattern occurrences
+    highlighted = window_seq
+    highlighted = highlighted.replace(
+        pat,
+        f"<span style='background-color:#ff4d6d; color:white; padding:2px; border-radius:4px;'>{pat}</span>"
+    )
+
+    st.markdown(
+        f"<div style='background-color:#112233; padding:10px; border-radius:10px; "
+        f"font-family: monospace; line-height:1.7;'>{highlighted}</div>",
+        unsafe_allow_html=True
+    )
+
+    count_in_window = window_seq.count(pat)
+    st.info(f"Pattern **{pat}**: **{count_in_window}** occurrence(s) highlighted in this window")
+    st.markdown("---") where should i add this block 
+
+            st.session_state.figures.append(
+                (
+                    f"performance_chart_{header}.png",
+                    fig_to_bytes(fig, "png")
+                )
+            )
+
+        combined_df = pd.concat(all_results, ignore_index=True)
+        st.session_state.results_stored = combined_df
 
 
 # ==========================
 # DOWNLOAD CSV
 # ==========================
 if st.session_state.results_stored is not None:
-    csv_buffer=io.StringIO()
-    st.session_state.results_stored.to_csv(csv_buffer,index=False)
+    csv_buffer = io.StringIO()
+    st.session_state.results_stored.to_csv(csv_buffer, index=False)
 
     st.download_button(
         label="📥 Download Results as CSV",
@@ -409,7 +462,7 @@ if st.session_state.results_stored is not None:
 
     # ZIP Export
     if st.session_state.figures:
-        zip_buf=io.BytesIO()
+        zip_buf = io.BytesIO()
         with zipfile.ZipFile(zip_buf, "w") as z:
             for name, fig_bytes in st.session_state.figures:
                 z.writestr(name, fig_bytes)
@@ -420,18 +473,19 @@ if st.session_state.results_stored is not None:
             data=zip_buf,
             file_name="charts_combined.zip",
             key="download_zip"
-)
+        )
 
     # Individual PNG Downloads
     st.markdown("### 📉 Individual Chart Downloads")
     for idx, (name, fig_bytes) in enumerate(st.session_state.figures):
-    st.download_button(
-        label=f"📥 Download {name}",
-        data=fig_bytes,
-        file_name=name,
-        mime="image/png",
-        key=f"download_{name}_{idx}"
-    )
+        st.download_button(
+            label=f"📥 Download {name}",
+            data=fig_bytes,
+            file_name=name,
+            mime="image/png",
+            key=f"download_{name}_{idx}"
+        )
+
     # PDF Export
     if reportlab_available:
         pdf_bytes = generate_pdf_report(
@@ -449,6 +503,3 @@ if st.session_state.results_stored is not None:
         )
     else:
         st.warning("⚠ Install reportlab to enable PDF export: pip install reportlab")
-
-
-
