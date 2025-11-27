@@ -418,19 +418,20 @@ if st.session_state.results_stored is not None:
         st.download_button(
             "📦 Download All Charts (ZIP)",
             data=zip_buf,
-            file_name="charts_bundle.zip"
-        )
+            file_name="charts_combined.zip",
+            key="download_zip"
+)
 
     # Individual PNG Downloads
     st.markdown("### 📉 Individual Chart Downloads")
-    for name, fig_bytes in st.session_state.figures:
-        st.download_button(
-            label=f"📥 Download {name}",
-            data=fig_bytes,
-            file_name=name,
-            mime="image/png",
-            key=f"download_{name}"
-)
+    for idx, (name, fig_bytes) in enumerate(st.session_state.figures):
+    st.download_button(
+        label=f"📥 Download {name}",
+        data=fig_bytes,
+        file_name=name,
+        mime="image/png",
+        key=f"download_{name}_{idx}"
+    )
     # PDF Export
     if reportlab_available:
         pdf_bytes = generate_pdf_report(
