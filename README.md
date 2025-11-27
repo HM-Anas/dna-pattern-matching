@@ -3,7 +3,9 @@
 
 An interactive bioinformatics web tool built with Streamlit that enables users to perform DNA sequence pattern matching using multiple string matching algorithms — including Naïve, KMP, Boyer–Moore, Rabin–Karp, and Aho–Corasick.
 
+
 This application supports multiple FASTA uploads, provides runtime comparisons, and visually highlights matching motifs within each sequence in an elegant dark mode interface.
+
 
 ⚙️ Features
 
