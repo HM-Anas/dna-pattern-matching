@@ -19,6 +19,7 @@ This application supports multiple FASTA uploads, provides runtime comparisons, 
 ✅ View detailed results:
 
 
+
 🧠 Algorithms Implemented:
 
 🔹 Naïve Search
@@ -60,7 +61,7 @@ Make sure you have Python 3.9+ and pip installed.
 
 The app will open automatically at:
  
-              👉https://dna-pattern-matching-app-ned.streamlit.app/
+              https://dna-pattern-matching-app-ned.streamlit.app/
 
 🌐 Live Demo
 
