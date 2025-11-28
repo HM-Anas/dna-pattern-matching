@@ -3,27 +3,21 @@
 
 An interactive bioinformatics web tool built with Streamlit that enables users to perform DNA sequence pattern matching using multiple string matching algorithms — including Naïve, KMP, Boyer–Moore, Rabin–Karp, and Aho–Corasick.
 
-
 This application supports multiple FASTA uploads, provides runtime comparisons, and visually highlights matching motifs within each sequence in an elegant dark mode interface.
-
 
 
 ⚙️ Features
 
 ✅ Upload multiple FASTA files simultaneously
+
 ✅ Or manually enter a custom DNA sequence
+
 ✅ Search for custom DNA motifs (e.g., ATGCGT, CGTAA)
+
 ✅ Choose one or more algorithms to compare
+
 ✅ View detailed results:
 
-1)Number of matches
-
-2)Runtime (execution time in seconds)
-
-Positions of matches
-✅ Highlighted sequence visualization showing match regions
-✅ Bar chart comparison of algorithm performance
-✅ Sleek dark mode UI with interactive elements
 
 🧠 Algorithms Implemented:
 
@@ -59,12 +53,14 @@ Make sure you have Python 3.9+ and pip installed.
            pip install streamlit pandas matplotlib
 
 3️⃣ Run the Streamlit App
-streamlit run app.py
+
+             streamlit run app.py
 
 4️⃣ Open in Browser:
 
 The app will open automatically at:
-👉https://dna-pattern-matching-app-ned.streamlit.app/
+ 
+              👉https://dna-pattern-matching-app-ned.streamlit.app/
 
 🌐 Live Demo
 
