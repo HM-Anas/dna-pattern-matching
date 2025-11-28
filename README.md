@@ -7,6 +7,7 @@ An interactive bioinformatics web tool built with Streamlit that enables users t
 This application supports multiple FASTA uploads, provides runtime comparisons, and visually highlights matching motifs within each sequence in an elegant dark mode interface.
 
 
+
 ⚙️ Features
 
 ✅ Upload multiple FASTA files simultaneously
@@ -15,23 +16,22 @@ This application supports multiple FASTA uploads, provides runtime comparisons, 
 ✅ Choose one or more algorithms to compare
 ✅ View detailed results:
 
-Number of matches
+1)Number of matches
 
-Runtime (execution time in seconds)
+2)Runtime (execution time in seconds)
 
 Positions of matches
 ✅ Highlighted sequence visualization showing match regions
 ✅ Bar chart comparison of algorithm performance
 ✅ Sleek dark mode UI with interactive elements
 
-🧠 Algorithms Implemented
+🧠 Algorithms Implemented:
+
 🔹 Naïve Search
 A straightforward approach that checks for the pattern at every position of the sequence.
 
 🔹 Knuth–Morris–Pratt (KMP)
-Linear-time pattern searching algorithm
-
-Uses the Longest Prefix Suffix (LPS) preprocessing table to skip redundant comparisons
+Linear-time pattern searching algorithm .Uses the Longest Prefix Suffix (LPS) preprocessing table to skip redundant comparisons
 
 🔹 Boyer–Moore
 
@@ -40,32 +40,29 @@ Efficient for large sequences
 Uses the bad character heuristic to skip unnecessary comparisons
 
 🔹 Rabin–Karp
-
-Hash-based string matching algorithm
-
-Compares hash values instead of characters for faster pattern search
+Hash-based string matching algorithm.Compares hash values instead of characters for faster pattern search
 
 🔹 Aho–Corasick
+Multi-pattern search algorithm . Currently simplified here for single-pattern demonstration
 
-Multi-pattern search algorithm
+🚀 How to Run Locally:
 
-Currently simplified here for single-pattern demonstration
-
-🚀 How to Run Locally
 1️⃣ Clone or Download the Repository
 git clone https://github.com/HM-Anas/dna-pattern-matching.git
-cd dna-pattern-matching
+
+          cd dna-pattern-matching
 
 2️⃣ Install Dependencies
 
 Make sure you have Python 3.9+ and pip installed.
 
-pip install streamlit pandas matplotlib
+           pip install streamlit pandas matplotlib
 
 3️⃣ Run the Streamlit App
 streamlit run app.py
 
-4️⃣ Open in Browser
+4️⃣ Open in Browser:
+
 The app will open automatically at:
 👉https://dna-pattern-matching-app-ned.streamlit.app/
 
@@ -75,12 +72,11 @@ The app will open automatically at:
 
 🧩 Example Usage
 
-Upload one or more .fasta or .fa files
+1) Upload one or more .fasta or .fa files
 
-Enter a pattern like ATGCGT
+2) Enter a pattern like ATGCGT,ATG
 
-Select algorithms (e.g., KMP, Boyer–Moore)
+3) Select algorithms (e.g., KMP, Boyer–Moore, Robin Karp, Naive etc)
 
-Click Search Pattern : Single or Multiple
 
 View highlighted matches, runtime comparison table, and performance chart
