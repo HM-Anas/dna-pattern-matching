@@ -105,7 +105,7 @@ else:
 # ==========================
 # Pattern input & algorithm selection
 # ==========================
-pattern_input = st.text_input("🔍 Enter Pattern(s) (comma separated)", placeholder="ATGC,CTAG,TTCGA").strip().upper()
+pattern_input = st.text_input("🔍 Enter Pattern(s) (comma separated)", placeholder="ATG,CTAG,TTCGA").strip().upper()
 algorithms = ["Naïve Search", "KMP", "Boyer–Moore", "Rabin–Karp", "Aho–Corasick"]
 selected_algos = st.multiselect("⚙️ Select Algorithms", algorithms, default=algorithms)
 
